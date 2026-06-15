@@ -2,6 +2,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import {
+    Alert,
     Badge,
     Button,
     Center,
@@ -10,9 +11,11 @@ import {
     Loader,
     Modal,
     Paper,
+    Select,
     Stack,
     Tabs,
     Text,
+    Textarea,
 } from "@mantine/core";
 import Header from "@/components/Header";
 import type { DisasterType, PointFeature, TaskAssignment, TaskStatus, ZoneFeature } from "@/types";
@@ -378,6 +381,9 @@ export default function DashboardPage() {
     const [showResolvedTasks, setShowResolvedTasks] = useState(false);
     const [activeTab, setActiveTab] = useState<string | null>("area-stats");
     const [flyTarget, setFlyTarget] = useState<{ lat: number; lng: number; seq: number } | null>(null);
+    const [routeOrigin, setRouteOrigin] = useState("Current location");
+    const [routeDestination, setRouteDestination] = useState("");
+    const [routeWaypoints, setRouteWaypoints] = useState("");
 
     useEffect(() => {
         const raw = localStorage.getItem("auth_user");
@@ -429,6 +435,58 @@ export default function DashboardPage() {
         }
         return map;
     }, [visiblePoints]);
+
+    const suggestedRouteStops = useMemo(() => {
+        const seen = new Set<string>();
+        return visiblePoints
+            .map((point) => point.properties.infrastructure_name)
+            .filter((name): name is string => {
+                if (!name || seen.has(name)) return false;
+                seen.add(name);
+                return true;
+            });
+    }, [visiblePoints]);
+
+    const routeOptionData = useMemo(
+        () => [
+            { value: "Current location", label: "Current location" },
+            ...suggestedRouteStops.map((name) => ({ value: name, label: name })),
+        ],
+        [suggestedRouteStops]
+    );
+
+    const destinationOptionData = useMemo(
+        () => suggestedRouteStops.map((name) => ({ value: name, label: name })),
+        [suggestedRouteStops]
+    );
+
+    const openRouteOptimization = () => {
+        const origin = routeOrigin.trim();
+        const destination = routeDestination.trim();
+        const waypoints = routeWaypoints
+            .split("\n")
+            .map((item) => item.trim())
+            .filter(Boolean);
+
+        if (!origin || !destination) {
+            return;
+        }
+
+        const params = new URLSearchParams({
+            api: "1",
+            origin,
+            destination,
+            travelmode: "driving",
+        });
+
+        if (waypoints.length > 0) {
+            params.set("waypoints", `optimize:true|${waypoints.join("|")}`);
+        } else {
+            params.set("waypoints", "optimize:true");
+        }
+
+        window.open(`https://www.google.com/maps/dir/?${params.toString()}`, "_blank", "noopener,noreferrer");
+    };
 
     if (checking || !user) {
         return (
@@ -592,6 +650,9 @@ export default function DashboardPage() {
                             </Tabs.Tab>
                             <Tabs.Tab value="tasks">
                                 <Text size="xs" fw={500}>Tasks</Text>
+                            </Tabs.Tab>
+                            <Tabs.Tab value="route-optimization">
+                                <Text size="xs" fw={500}>Route Optimization</Text>
                             </Tabs.Tab>
                         </Tabs.List>
 
@@ -797,6 +858,66 @@ export default function DashboardPage() {
                             {assignments.length === 0 && (
                                 <Text size="sm" c="dimmed" ta="center" mt="xl">No tasks yet</Text>
                             )}
+                        </Tabs.Panel>
+
+                        <Tabs.Panel value="route-optimization" style={{ flex: 1, overflowY: "auto", padding: 12 }}>
+                            <Stack gap="sm">
+                                <Alert color="blue" title="Google Maps route planning">
+                                    Open Google Maps with optimized aid-delivery stops. Google reorders the waypoints automatically to shorten the path for responders.
+                                </Alert>
+                                <Text size="sm" c="dimmed">
+                                    Use the affected locations currently visible on the dashboard as the waypoint list, or paste your own aid hub and delivery stops.
+                                </Text>
+                                <Select
+                                    label="Start / current location"
+                                    value={routeOrigin}
+                                    onChange={(value) => setRouteOrigin(value ?? "Current location")}
+                                    data={routeOptionData}
+                                    placeholder="Select a starting area"
+                                    searchable
+                                    clearable={false}
+                                />
+                                <Select
+                                    label="Destination / affected area"
+                                    value={routeDestination}
+                                    onChange={(value) => setRouteDestination(value ?? "")}
+                                    data={destinationOptionData}
+                                    placeholder="Select an affected area"
+                                    searchable
+                                    clearable
+                                />
+                                <Textarea
+                                    label="Waypoint stops (one per line)"
+                                    minRows={5}
+                                    value={routeWaypoints}
+                                    onChange={(event) => setRouteWaypoints(event.currentTarget.value)}
+                                    placeholder="Affected site 1\nAffected site 2\nAffected site 3"
+                                />
+                                <Button onClick={openRouteOptimization}>Open optimized route in Google Maps</Button>
+
+                                {suggestedRouteStops.length > 0 && (
+                                    <Paper withBorder radius="md" p="sm">
+                                        <Text size="xs" fw={600} c="dimmed" mb="xs">Suggested affected stops</Text>
+                                        <Stack gap="xs">
+                                            {suggestedRouteStops.slice(0, 8).map((name) => (
+                                                <Button
+                                                    key={name}
+                                                    variant="light"
+                                                    size="compact-xs"
+                                                    justify="flex-start"
+                                                    onClick={() =>
+                                                        setRouteWaypoints((prev) =>
+                                                            prev ? `${prev}\n${name}` : name
+                                                        )
+                                                    }
+                                                >
+                                                    {name}
+                                                </Button>
+                                            ))}
+                                        </Stack>
+                                    </Paper>
+                                )}
+                            </Stack>
                         </Tabs.Panel>
                     </Tabs>
                 </aside>
