@@ -26,10 +26,17 @@ export const DISASTER_COLORS: Record<DisasterType, string> = {
   Other: "#607D8B",
 };
 
+// Earthy, restrained severity ramp — the only saturated colours in the system.
 export const DAMAGE_COLORS: Record<DamageLevel, string> = {
-  Critical: "#E24B4A",
-  Medium: "#EF9F27",
-  Low: "#639922",
+  Critical: "#C5453B",
+  Medium: "#CE882B",
+  Low: "#6E8B3D",
+};
+
+export const DAMAGE_WEIGHT: Record<DamageLevel, number> = {
+  Critical: 3,
+  Medium: 2,
+  Low: 1,
 };
 
 export interface PointProperties {

@@ -14,6 +14,7 @@ import {
 	Textarea,
 	TextInput,
 } from "@mantine/core";
+import { IconAlertTriangle } from "@tabler/icons-react";
 import Header from "@/components/Header";
 import type { DisasterType, PointFeature, Responder, ZoneFeature } from "@/types";
 import { canAssignToResponder, DAMAGE_COLORS, deriveAvailability } from "@/types";
@@ -73,11 +74,15 @@ function buildZoneFromPoints(zoneId: string, pts: PointFeature[]): ZoneFeature {
 }
 
 const AVAILABILITY_STYLES = {
-	available: { bg: "#EAF3DE", color: "#3B6D11" },
-	busy: { bg: "#FAEEDA", color: "#854F0B" },
-	full: { bg: "#FEE2E2", color: "#991B1B" },
-	offline: { bg: "#F1EFE8", color: "#5F5E5A" },
+	available: { bg: "var(--sev-low-soft)", color: "var(--sev-low)" },
+	busy: { bg: "var(--sev-medium-soft)", color: "var(--sev-medium)" },
+	full: { bg: "var(--sev-critical-soft)", color: "var(--sev-critical)" },
+	offline: { bg: "var(--sunken)", color: "var(--ink-3)" },
 } as const;
+
+const AVATAR_CHIP =
+	"h-10 w-10 rounded-full flex items-center justify-center text-sm font-semibold";
+const AVATAR_CHIP_STYLE = { background: "var(--sunken)", color: "var(--ink-2)" } as const;
 
 export default function RespondersPage() {
 	const router = useRouter();
@@ -356,7 +361,7 @@ export default function RespondersPage() {
 		return (
 			<Paper withBorder radius="md" p="md">
 				<Group align="center" gap="md">
-					<div className="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center text-sm font-semibold">
+					<div className={AVATAR_CHIP} style={AVATAR_CHIP_STYLE}>
 						{selectedResponder.name.split(" ").map((p) => p[0]).join("")}
 					</div>
 					<div>
@@ -385,14 +390,14 @@ export default function RespondersPage() {
 	}
 
 	return (
-		<div className="flex flex-col h-screen overflow-hidden bg-gray-50">
+		<div className="flex flex-col h-screen overflow-hidden" style={{ background: "var(--canvas)" }}>
 			<Header user={user} />
 			<div className="flex flex-1 overflow-hidden p-4 gap-4">
 
 				{/* Left: responder list */}
 				<div className="w-[55%] overflow-auto space-y-4">
 					<div className="flex items-center justify-between">
-						<Text fw={700} size="lg">Responders</Text>
+						<Text fw={700} size="lg" style={{ color: "var(--ink)" }}>Responders</Text>
 						<Badge>{responders.length}</Badge>
 					</div>
 					<Stack gap="sm">
@@ -423,15 +428,15 @@ export default function RespondersPage() {
 									style={{
 										cursor: isIneligible ? "not-allowed" : "pointer",
 										opacity: isIneligible ? 0.5 : 1,
-										borderLeft: !isIneligible && avail === "available" ? "4px solid #059669" : undefined,
-										border: isSelected && !isIneligible ? "2px solid #171717" : undefined,
+										borderLeft: !isIneligible && avail === "available" ? "4px solid var(--sev-low)" : undefined,
+										border: isSelected && !isIneligible ? "2px solid var(--accent)" : undefined,
 									}}
 									onClick={() => {
 										if (!isIneligible) setSelectedResponder(responder);
 									}}
 								>
 									<Group align="center" gap="md">
-										<div className="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center text-sm font-semibold">
+										<div className={AVATAR_CHIP} style={AVATAR_CHIP_STYLE}>
 											{initials}
 										</div>
 										<div style={{ flex: 1 }}>
@@ -447,8 +452,8 @@ export default function RespondersPage() {
 													size="xs"
 													style={
 														eligInfo.eligible
-															? { backgroundColor: "#E6F1FB", color: "#185FA5" }
-															: { backgroundColor: "#F1EFE8", color: "#5F5E5A" }
+															? { backgroundColor: "var(--accent-soft)", color: "var(--accent-ink)" }
+															: { backgroundColor: "var(--sunken)", color: "var(--ink-3)" }
 													}
 												>
 													{eligInfo.eligible
@@ -504,7 +509,13 @@ export default function RespondersPage() {
 									onChange={(e) => setDebrisWeight(Number(e.target.value))}
 									className="w-full"
 								/>
-								<Alert title="Note" color="yellow" variant="light" mt="xs">
+								<Alert
+									variant="light"
+									color="yellow"
+									mt="xs"
+									icon={<IconAlertTriangle size={16} />}
+									styles={{ root: { background: "var(--sev-medium-soft)" }, message: { color: "var(--ink-2)" }, icon: { color: "var(--sev-medium)" } }}
+								>
 									High debris weight will deprioritise zones that may urgently need response.
 								</Alert>
 							</div>
@@ -649,18 +660,18 @@ export default function RespondersPage() {
 											size="sm"
 											style={
 												pointData.properties.task_status === "unassigned"
-													? { backgroundColor: "#FEE2E2", color: "#991B1B" }
+													? { backgroundColor: "var(--sev-critical-soft)", color: "var(--sev-critical)" }
 													: pointData.properties.task_status === "assigned"
-													? { backgroundColor: "#E6F1FB", color: "#185FA5" }
-													: { backgroundColor: "#EAF3DE", color: "#3B6D11" }
+													? { backgroundColor: "var(--accent-soft)", color: "var(--accent-ink)" }
+													: { backgroundColor: "var(--sev-low-soft)", color: "var(--sev-low)" }
 											}
 										>
 											{pointData.properties.task_status}
 										</Badge>
 									</Group>
 									{pointData.properties.casualties > 0 && (
-										<Text size="xs" style={{ color: "#B45309" }} mb={4}>
-											⚠ {pointData.properties.casualties}{" "}
+										<Text size="xs" style={{ color: "var(--sev-medium)" }} mb={4} className="flex items-center gap-1">
+											<IconAlertTriangle size={12} stroke={2.2} /> {pointData.properties.casualties}{" "}
 											{pointData.properties.casualties === 1 ? "casualty" : "casualties"}
 										</Text>
 									)}
@@ -674,17 +685,22 @@ export default function RespondersPage() {
 								<Text size="sm" fw={600} mb="sm">Assignment</Text>
 								<Text size="xs" c="dimmed" mb="xs">Priority level</Text>
 								<Group gap="xs" mb="md">
-									{(["Low", "Medium", "Critical"] as const).map((level) => (
-										<Button
-											key={level}
-											size="xs"
-											variant={priority === level ? "filled" : "outline"}
-											color={level === "Critical" ? "red" : level === "Medium" ? "yellow" : "green"}
-											onClick={() => setPriority(level)}
-										>
-											{level}
-										</Button>
-									))}
+									{(["Low", "Medium", "Critical"] as const).map((level) => {
+										const c =
+											level === "Critical" ? "var(--sev-critical)" : level === "Medium" ? "var(--sev-medium)" : "var(--sev-low)";
+										const active = priority === level;
+										return (
+											<Button
+												key={level}
+												size="xs"
+												variant="default"
+												onClick={() => setPriority(level)}
+												styles={{ root: { background: active ? c : "transparent", color: active ? "#fff" : c, borderColor: c } }}
+											>
+												{level}
+											</Button>
+										);
+									})}
 								</Group>
 								<Textarea
 									label="Instructions"
@@ -704,7 +720,7 @@ export default function RespondersPage() {
 								{selectedResponder &&
 									selectedResponderEligibility !== null &&
 									!selectedResponderEligibility.eligible && (
-										<Text size="xs" style={{ color: "#991B1B" }} mt="xs">
+										<Text size="xs" style={{ color: "var(--sev-critical)" }} mt="xs">
 											{selectedResponderEligibility.reason}
 										</Text>
 									)}
