@@ -11,6 +11,7 @@ import {
 import Image from "next/image";
 import {
 	IconMap2,
+	IconAlertCircle,
 	IconUsers,
 	IconAdjustmentsHorizontal,
 	IconLogout,
@@ -35,6 +36,7 @@ interface HeaderProps {
 
 const NAV_LINKS = [
 	{ label: "Operations", href: "/", icon: IconMap2 },
+	{ label: "Incidents", href: "/incidents", icon: IconAlertCircle },
 	{ label: "Responders", href: "/responders", icon: IconUsers },
 	{ label: "Weighting", href: "/scoring", icon: IconAdjustmentsHorizontal },
 ];
